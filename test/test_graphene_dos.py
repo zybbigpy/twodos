@@ -98,23 +98,22 @@ def make_hamk(kvec: np.ndarray):
     return hamk
 
 
-# kline, kmesh = set_tb_disp_kmesh(30, graphene_high_symm_ks)
-
-# # test band structure
-# emesh = []
-# for kvec in kmesh:
-#     hamk = make_hamk(kvec)
-#     v, w = np.linalg.eigh(hamk)
-#     emesh.append(v)
-# emesh = np.array(emesh)
-# print(emesh.shape)
-# #print(kmesh)
-# plt.plot(kline, emesh[:,0])
-# plt.plot(kline, emesh[:,1])
-# plt.show()
-
 
 class graphene_test(unittest.TestCase):
+
+    def test_graphene_band(self):
+        kline, kmesh = set_tb_disp_kmesh(30, graphene_high_symm_ks)
+        emesh = []
+        for kvec in kmesh:
+            hamk = make_hamk(kvec)
+            v, w = np.linalg.eigh(hamk)
+            emesh.append(v)
+        emesh = np.array(emesh)
+        plt.plot(kline, emesh[:,0])
+        plt.plot(kline, emesh[:,1])
+        plt.savefig("graphene_band.png")
+        plt.close()
+
     def test_dos_result(self):
         n_k = 100
         num_e = 300
@@ -131,6 +130,7 @@ class graphene_test(unittest.TestCase):
         graphene_dos.set_kmesh(kmesh)
         graphene_dos.set_emesh(emesh)
         graphene_dos.solver()
+        graphene_dos.dos_smear_gaussian_solver()
         dos_integral = graphene_dos.dos_check()
         graphene_dos.plot()
         plt.savefig("graphene_dos.png")

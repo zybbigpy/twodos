@@ -109,6 +109,7 @@ def _triangle_dos_solver(num_k: int, karea: float, eline: np.ndarray,
 
 
 class TwoDos():
+
     def __init__(self, num_k: int, bvecs: np.ndarray, num_e: int):
 
         self.num_k = num_k
@@ -122,6 +123,8 @@ class TwoDos():
         self.edos = None
         self.eline = None
         self.dos_integral = None
+        self.dos_smear = None
+        self.dos_smear_gaussian = None
 
     def _set_karea(self):
 
@@ -149,6 +152,7 @@ class TwoDos():
         self.elow = np.min(emesh) - 1
         self.ehigh = np.max(emesh) + 1
         self.delta_e = (self.ehigh - self.elow) / self.num_e
+        self.eta = self.delta_e*0.6
         self.eline = np.array(
             [self.elow + i * self.delta_e for i in range(self.num_e)])
         self.num_bands = emesh.shape[2]
@@ -173,7 +177,13 @@ class TwoDos():
         if self.edos is None or self.eline is None:
             raise Exception("Set kmesh and emesh and solve dos first.")
 
-        plt.plot(self.eline, self.edos)
+        plt.plot(self.eline, self.edos, label='Triangle Integral')
+        if self.dos_smear is not None:
+            plt.plot(self.eline, self.dos_smear, label='Green Function Smear')
+        if self.dos_smear_gaussian is not None:
+            plt.plot(self.eline, self.dos_smear_gaussian, label='Gaussian Smear')
+
+        plt.legend()
         plt.grid()
 
     def dos_check(self):
@@ -182,6 +192,29 @@ class TwoDos():
 
         return self.dos_integral
 
+    def dos_smear_solver(self):
+
+        self.dos_smear = np.zeros(self.eline.shape)
+
+        for i in range(self.eline.shape[0]):
+            for e in np.nditer(self.emesh):
+                self.dos_smear[i] += self.eta/((self.eline[i]-e)**2+self.eta**2)/np.pi 
+            print(self.dos_smear[i]/(self.num_k**2))
+        
+        self.dos_smear = self.dos_smear/(self.num_k**2)
+
+    def dos_smear_gaussian_solver(self):
+
+        self.dos_smear_gaussian = np.zeros(self.eline.shape)
+
+        for i in range(self.eline.shape[0]):
+            for e in np.nditer(self.emesh):
+                self.dos_smear_gaussian[i] += \
+                    np.exp(-(self.eline[i]-e)**2/(2*self.eta**2))/(np.sqrt(2*np.pi)*self.eta)
+            print(self.dos_smear_gaussian[i]/(self.num_k**2))
+        
+        self.dos_smear_gaussian = self.dos_smear_gaussian/(self.num_k**2)
+    
     def print_info(self):
 
         print(">>> elow  setted as:", self.elow)
